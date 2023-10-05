@@ -1,0 +1,20 @@
+{
+    "pylint.path": [
+        "aiod-cso-venv/bin/pylint"
+    ],
+    "cSpell.words": [
+        "fitz",
+        "pdfdocument",
+        "pdfminer",
+        "pdfparser"
+    ],
+    "editor.formatOnSave": false,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+    },
+    "python.formatting.provider": "none",
+    "python.analysis.autoFormatStrings": true,
+    "python.linting.banditEnabled": true,
+    "python.linting.enabled": true,
+}

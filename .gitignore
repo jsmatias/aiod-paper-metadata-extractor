@@ -1,0 +1,13 @@
+# Python cache files
+__pycache__/
+
+# data folder
+papers/*
+!/papers/README.md
+
+# venv
+*venv/
+
+# Jupyter
+notebooks/
+.ipynb_checkpoints/
