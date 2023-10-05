@@ -1,6 +1,6 @@
 {
     "pylint.path": [
-        "aiod-cso-venv/bin/pylint"
+        "aiod-pmeta-extr-venv/bin/pylint"
     ],
     "cSpell.words": [
         "fitz",

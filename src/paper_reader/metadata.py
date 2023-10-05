@@ -30,7 +30,7 @@ class Metadata:
                 result = re.search(field_pattern, metadata).group(1)
             except Exception as err:
                 print(
-                    f"{err} of type {type(err)} - Error found trying to search {field} in the metadata: {metadata}."
+                    f"{err} of type {type(err)} - Error found trying to search {field} in the metadata: {metadata[:50]}..."
                 )
                 result = ""
             return result

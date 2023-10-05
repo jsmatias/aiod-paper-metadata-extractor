@@ -3,17 +3,29 @@ import fitz
 import numpy as np
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
-from config import Config
+
+# from config import Config
 from .metadata import Metadata
 
 
 class Paper:
     """A simple abstraction layer for working on the paper object"""
 
-    def __init__(self, file_name: str) -> None:
+    def __init__(self, files_path: str, file_name: str, silent=True) -> None:
+        """
+        Args:
+            files_path: "/path/to/files/"
+            file_name: "my-paper.pdf"
+        """
+        self.silent = silent
         self.file_name = file_name
-        config = Config()
-        self.full_path = config.get_papers_path() + self.file_name
+        # config = Config()
+        # self.full_path = config.get_papers_path() + self.file_name
+        self.full_path = files_path + self.file_name
+
+        self._pdf_info = []
+        self._raw_text = ""
+        self.text = ""
 
         self.title = ""
         self.author = []
@@ -40,7 +52,8 @@ class Paper:
         if self.doi:
             metadata = Metadata().get_metadata_from_doi(self.doi)
 
-            print("Correct DOI? ", self.cross_validate_doi(metadata))
+            if not self.silent:
+                print("Correct DOI? ", self.cross_validate_doi(metadata))
 
             self.title = metadata["title"]
             self.author = metadata["author"]
@@ -78,9 +91,10 @@ class Paper:
                         keywords_list = re.split(r"[^\s\w]", keywords_str)
                     except Exception as err:
                         keywords_list = []
-                        print(
-                            f"Error {err} of type {type(err)} - Variable with type: {type(keywords_str)}; and value: {keywords_str}",
-                        )
+                        if not self.silent:
+                            print(
+                                f"Error {err} of type {type(err)} - Variable with type: {type(keywords_str)}; and value: {keywords_str}",
+                            )
 
                 elif isinstance(keywords_str, str) and keywords_str:
                     keywords_list = keywords_str.split(",")
