@@ -3,9 +3,11 @@ import fitz
 import numpy as np
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
+import warnings
 
 # from config import Config
 from .metadata import Metadata
+from acm.classification_extractor import get_classification
 
 
 class Paper:
@@ -39,6 +41,7 @@ class Paper:
         self.month = ""
         self.pages = ""
         self.keywords = []
+        self.topics = []
 
         self.load()
 
@@ -68,7 +71,28 @@ class Paper:
             self.pages = metadata["pages"]
             self.keywords = metadata["keywords"]
 
+            self.topics = self.extract_topics()
+
         self.keywords = self.extract_keywords()
+
+    def extract_topics(self) -> list:
+        """Gets the topics from ontology classification.
+        At the moment it's only implemented for ACM publisher.
+        """
+        topics = self.topics
+        if self.doi:
+            publisher = self.publisher.lower().strip()
+            if publisher == "acm":
+                topics = get_classification(self.doi)
+                if topics and (topics[0].strip().lower() != self.title.lower().strip()):
+                    if not self.silent:
+                        msg = f"The title in the topics extracted from '{publisher}' didn't match with '{self.title}'"
+                        warnings.warn(msg)
+            else:
+                if not self.silent:
+                    msg = f"Logic not implemented to extract topics from publisher: '{self.publisher}'"
+                    warnings.warn(msg)
+        return topics
 
     def extract_keywords(self) -> list:
         """Calls the extract_raw_keywords method and format the keywords"""
@@ -105,18 +129,79 @@ class Paper:
 
         # join words that are separated at the end of the line: e.g. dis-\parate
         text = self._raw_text.replace("-\n", "")
+        text = re.sub(r" {2,3}", " ", text)
+        text = re.sub(r"\n{2,}", "\n", text)
+        text = re.sub(r"(?<=[^ \w])\s|\s(?=[^ \w])", "", text)
         text = text.lower().strip()
         keywords_list = self.extract_keywords_from_text(text)
         return keywords_list
 
     def extract_keywords_from_text(self, text: str) -> list:
         r"""Tries to extract keywords from the text.
+        It assumes that the pattern is a list of words after the flag 'keywords' or 'key words'
+        separated by any non-word character, excluding "\s" and "-".
+        Full pattern:
+          "(?:Keywords|Key words)[:\s]((?:(?:\w+(?:[-\s]\w+){,3},)){1,6}(?:\w+(?:[-\s]\w+){0,3})(?:[^\s,\w]|\n\w+[^ \w]))"
+        Ex.: keywords: test-word1, test-word2 word1, word2, last composed.
+        """
+
+        min_words = 1
+        max_words = 4
+
+        min_keywords = 1
+        max_keywords = 7
+
+        start_pattern = r"(?:keywords|key words)[:\s]"
+        keyword_pattern = rf"\w+(?:[-\s]\w+){{{min_words-1},{max_words-1}}}"
+        separator_pattern = r"[^\s\w-]"  # e.g. ",", ";", "|", etc.
+        separator = re.findall(
+            rf"{start_pattern}(?:{keyword_pattern})({separator_pattern})", text
+        )
+        if separator:
+            # separator must have just one element
+            separator = separator[0]
+        else:
+            keywords_list = []
+            return keywords_list
+
+        keyword_sep_pattern = f"{keyword_pattern}{separator}"
+        end_pattern = rf"(?=[^\s\w{separator}]|\n\w+[^ \w])"  # full stop or a word wrapped around \n
+
+        keywords_group_pattern = f"(?:{keyword_sep_pattern}){{{min_keywords},{max_keywords-1}}}(?:{keyword_pattern})"
+        keywords_match_pattern = (
+            rf"{start_pattern}({keywords_group_pattern}{end_pattern})"
+        )
+
+        keywords_group = re.findall(keywords_match_pattern, text)
+        if not keywords_group:
+            return self.keywords or []
+        keywords_string = keywords_group[0]
+
+        keywords_list = [
+            keyword.strip().replace("\n", " ")
+            for keyword in keywords_string.split(separator)
+        ]
+
+        if keywords_list and (keywords_list[-1] in ["acm reference format"]):
+            del keywords_list[-1]
+
+        if self.keywords and (self.keywords != keywords_list):
+            print(
+                "Keywords found from the metadata of the pdf differs from the ones found in the text."
+            )
+
+        return keywords_list
+
+    def extract_keywords_from_text_(self, text: str) -> list:
+        r"""Tries to extract keywords from the text.
         It assumes that the pattern is a list of at least 3 words separated by
         any non-word character, excluding "\s" and "\.".
         Full pattern:
-          "(?:keywords|key words)[:\s]+(?:(?:\w+\-?\w+)?\s?(?:\w+\-?\w+))(?:[^\s\.\w]\s?(?:(?:\w+\-?\w+)?\s?(?:\w+\-?\w+))){2,}(?=\n)".
+          "(?:Keywords|Key words)[:\s]+((?:(?:\w+\-?\w+)?[\r\f\t ]?(?:\w+\-?\w+))(?:[^\s\.\w][\r\f\t ]?(?:(?:\w+\-?\w+)?[\r\f\t ]?(?:\w+\-?\w+))){2,})"
         Ex.: keywords: test-word1, test-word2 word1, word2, last composed.
         """
+
+        "(((?:(?:[\w\-?]+)?[\s]?(?:\w+\-?\w+))(?:([^\s\.\w])[\r\f\t\n ]?)){1,}(?:(?:\w+\-?\w+)?[\r\f\t ]?(?:\w+\-?\w+)))"
 
         flag_pattern = r"(?:keywords|key words)[:\s]+"
         single_word_pattern = r"(?:\w+\-?\w+)"

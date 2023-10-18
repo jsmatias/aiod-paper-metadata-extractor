@@ -4,16 +4,20 @@ from config import Config
 
 
 class Metadata:
-    def __init__(self) -> None:
+    def __init__(self, silent=True) -> None:
         config = Config()
         self.api_url_base = config.get_metadata_api_url()
         self.headers = config.get_metadata_api_headers()
+        self.silent = silent
 
     def get_metadata_from_doi(self, doi: str) -> str:
         """`GET` method to fetch the metadata from the DOI of the paper"""
         url = self.api_url_base + doi
-        res = requests.get(url, headers=self.headers, timeout=3000)
-
+        try:
+            res = requests.get(url, headers=self.headers, timeout=3000)
+        except ConnectionError as err:
+            print(err)
+            # TODO handle this error
         metadata = self._to_dict(res.text)
 
         return metadata
@@ -29,9 +33,10 @@ class Metadata:
             try:
                 result = re.search(field_pattern, metadata).group(1)
             except Exception as err:
-                print(
-                    f"{err} of type {type(err)} - Error found trying to search {field} in the metadata: {metadata[:50]}..."
-                )
+                if not self.silent:
+                    print(
+                        f"{err} of type {type(err)} - Error found trying to search {field} in the metadata: {metadata[:50]}..."
+                    )
                 result = ""
             return result
 

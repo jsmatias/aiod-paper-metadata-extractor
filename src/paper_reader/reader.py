@@ -26,6 +26,7 @@ class Reader:
             paperPath.split("/")[-1] for paperPath in glob(self.files_path + "*.pdf")
         ]
         for paper in papers:
+            print(f"--------- Extracting --------- {paper}")
             self.extract_info(paper)
 
     def get_metadata(self, format: str = "dict") -> list[dict] | pd.DataFrame:
@@ -48,6 +49,7 @@ class Reader:
                     "publisher": paper.publisher,
                     "year": paper.year,
                     "keywords": ";".join(paper.keywords),
+                    "topics": ";".join(paper.topics),
                 }
             )
 
