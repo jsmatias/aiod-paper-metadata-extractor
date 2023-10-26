@@ -2,6 +2,21 @@ import re
 import requests
 from config import Config
 
+empty_metadata = {
+    "title": "",
+    "author": "",
+    "issn": "",
+    "url": "",
+    "doi": "",
+    "number": "",
+    "journal": "",
+    "publisher": "",
+    "year": "",
+    "month": "",
+    "pages": "",
+    "keywords": "",
+}
+
 
 class Metadata:
     def __init__(self, silent=True) -> None:
@@ -10,7 +25,7 @@ class Metadata:
         self.headers = config.get_metadata_api_headers()
         self.silent = silent
 
-    def get_metadata_from_doi(self, doi: str) -> str:
+    def get_metadata_from_doi(self, doi: str) -> dict[str, str]:
         """`GET` method to fetch the metadata from the DOI of the paper"""
         url = self.api_url_base + doi
         try:
@@ -18,6 +33,7 @@ class Metadata:
         except ConnectionError as err:
             print(err)
             # TODO handle this error
+            return empty_metadata
         metadata = self._to_dict(res.text)
 
         return metadata

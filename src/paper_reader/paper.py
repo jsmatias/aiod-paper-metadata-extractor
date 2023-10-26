@@ -4,6 +4,8 @@ import numpy as np
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 import warnings
+from utils.utils import extract_doi_from_str
+
 
 # from config import Config
 from .metadata import Metadata
@@ -283,17 +285,17 @@ class Paper:
             text += page.get_text()
         return text
 
-    def extract_doi_from_str(self, string: str) -> list:
-        """Extract all DOIs matches from a string using a regular expression"""
-        doi_pattern = r"\b10\.\d{4,}/[-._;()/:a-zA-Z0-9]+\b"
-        # Find all matches in the text
-        doi_list = re.findall(doi_pattern, string)
-        return doi_list
+    # def extract_doi_from_str(self, string: str) -> list:
+    #     """Extract all DOIs matches from a string using a regular expression"""
+    #     doi_pattern = r"\b10\.\d{4,}/[-._;()/:a-zA-Z0-9]+\b"
+    #     # Find all matches in the text
+    #     doi_list = re.findall(doi_pattern, string)
+    #     return doi_list
 
     def extract_doi(self) -> str:
         """Extract DOI"""
-        doi_list = self.extract_doi_from_str(str(self._pdf_info))
+        doi_list = extract_doi_from_str(str(self._pdf_info))
         if not doi_list:
-            doi_list = self.extract_doi_from_str(self._raw_text)
+            doi_list = extract_doi_from_str(self._raw_text)
 
         return doi_list[0] if doi_list else ""

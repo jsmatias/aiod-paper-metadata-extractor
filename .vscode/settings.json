@@ -17,4 +17,6 @@
     "python.analysis.autoFormatStrings": true,
     "python.linting.banditEnabled": true,
     "python.linting.enabled": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
 }
