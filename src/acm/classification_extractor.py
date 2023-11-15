@@ -6,7 +6,7 @@ def get_classification(doi: str) -> list:
     classification = []
     url = f"https://dl.acm.org/doi/{doi}"
     try:
-        res = requests.get(url, timeout=3000)
+        res = requests.get(url, timeout=30)
     except ConnectionError as err:
         print(err)
         return classification
@@ -21,5 +21,6 @@ def get_classification(doi: str) -> list:
         if keywords:
             for kw in keywords:
                 classification.append(kw.text)
-
+    if classification:
+        classification = [topic.lower() for topic in classification]
     return classification

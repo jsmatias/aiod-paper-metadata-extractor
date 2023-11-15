@@ -15,12 +15,26 @@ from acm.classification_extractor import get_classification
 class Paper:
     """A simple abstraction layer for working on the paper object"""
 
-    def __init__(self, files_path: str, file_name: str, silent=True) -> None:
+    def __init__(
+        self,
+        files_path: str,
+        file_name: str,
+        filename_has_doi: bool = True,
+        pattern_to_replace: dict = {},
+        silent=True,
+    ) -> None:
         """
         Args:
             files_path: "/path/to/files/"
             file_name: "my-paper.pdf"
+            pattern_to_replace: only used when `from_filename` is set to True.
+                This method will try to replace the keys of the dictionary by their corresponding values
+                on the filename.
+            from_filename: When set to `True` the method will try to find the doi pattern in the filename.
         """
+        self.filename_has_doi = filename_has_doi
+        self.pattern_to_replace = pattern_to_replace
+
         self.silent = silent
         self.file_name = file_name
         # config = Config()
@@ -85,7 +99,7 @@ class Paper:
         if self.doi:
             publisher = self.publisher.lower().strip()
             if publisher == "acm":
-                topics = get_classification(self.doi)
+                topics = get_classification(self.doi)[1:]
                 if topics and (topics[0].strip().lower() != self.title.lower().strip()):
                     if not self.silent:
                         msg = f"The title in the topics extracted from '{publisher}' didn't match with '{self.title}'"
@@ -285,16 +299,19 @@ class Paper:
             text += page.get_text()
         return text
 
-    # def extract_doi_from_str(self, string: str) -> list:
-    #     """Extract all DOIs matches from a string using a regular expression"""
-    #     doi_pattern = r"\b10\.\d{4,}/[-._;()/:a-zA-Z0-9]+\b"
-    #     # Find all matches in the text
-    #     doi_list = re.findall(doi_pattern, string)
-    #     return doi_list
-
     def extract_doi(self) -> str:
-        """Extract DOI"""
-        doi_list = extract_doi_from_str(str(self._pdf_info))
+        """Extracts DOI"""
+        doi_list = []
+        if self.filename_has_doi:
+            filename = ".".join(
+                self.file_name.split(".")[:-1]
+            )  # remove filename extension
+            for k, v in self.pattern_to_replace.items():
+                filename = filename.replace(k, v)
+            doi_list = extract_doi_from_str(filename)
+
+        if not doi_list:
+            doi_list = extract_doi_from_str(str(self._pdf_info))
         if not doi_list:
             doi_list = extract_doi_from_str(self._raw_text)
 

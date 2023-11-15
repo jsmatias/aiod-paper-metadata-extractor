@@ -14,12 +14,24 @@ class Reader:
 
         self.paper_list: list[Paper] = []
 
-    def extract_info(self, file_name: str):
+    def reset(self):
+        self.paper_list = []
+
+    def extract_info(
+        self,
+        file_name: str,
+        filename_has_doi: bool = True,
+        pattern_to_replace: dict = {},
+    ):
         """Instantiate Paper with the file_name"""
         # TODO check if the file exists
-        self.paper_list.append(Paper(self.files_path, file_name))
+        self.paper_list.append(
+            Paper(self.files_path, file_name, filename_has_doi, pattern_to_replace)
+        )
 
-    def extract_info_from_bulk(self):
+    def extract_info_from_bulk(
+        self, filename_has_doi: bool = False, pattern_to_replace: dict = {}
+    ):
         """Extracts info for all pdf files in the files path"""
 
         papers = [
@@ -27,7 +39,7 @@ class Reader:
         ]
         for paper in papers:
             print(f"--------- Extracting --------- {paper}")
-            self.extract_info(paper)
+            self.extract_info(paper, filename_has_doi, pattern_to_replace)
 
     def get_metadata(self, format: str = "dict") -> list[dict] | pd.DataFrame:
         """

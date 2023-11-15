@@ -1,4 +1,6 @@
 bandit==1.7.5
+beautifulsoup4==4.12.2
+getpass4==0.0.14.1
 ipykernel==6.25.2
 numpy==1.26.0
 pandas==2.1.1
