@@ -22,5 +22,6 @@ papers/*
 
 # Jupyter
 # notebooks/
+*.ipynb
 .ipynb_checkpoints/
 
